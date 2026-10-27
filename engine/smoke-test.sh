@@ -21,6 +21,30 @@ printf '{"execute":"qmp_capabilities"}\n{"execute":"query-status"}\n{"execute":"
         -vnc unix:"$T/vnc.sock" -qmp stdio > "$T/qmp.out"
 grep -q '"status"' "$T/qmp.out" && ok "QEMU TCG ile açılıp kapandı"
 
+# Windows kurulum ekranı ramfb'dir: firmware onu başlatmalı. Başlatmazsa QEMU 640×480 "Guest has not initialized
+# the display" yer tutucusunu verir; EDK2 ramfb'yi 800×600 açar.
+"$H/qemu-img" convert -f "$VARS_FORMAT" -O qcow2 "$S/qemu/edk2-arm-vars.fd" "$T/fbvars.qcow2"
+"$H/qemu-system-aarch64" -L "$S/qemu" -M virt-10.0 -accel tcg -cpu max -m 512 -nodefaults -display none -device ramfb \
+    -drive if=pflash,format=raw,readonly=on,file="$S/qemu/edk2-aarch64-code.fd" \
+    -drive if=pflash,format=qcow2,file="$T/fbvars.qcow2" -qmp unix:"$T/qmp.sock",server=on,wait=off &
+FB_PID=$!
+fb=""
+for _ in $(seq 1 60); do
+    sleep 2
+    [ -S "$T/qmp.sock" ] || continue
+    rm -f "$T/fb.ppm"
+    python3 -I - "$T/qmp.sock" "$T/fb.ppm" <<'PY' || true
+import json, socket, sys
+s = socket.socket(socket.AF_UNIX); s.connect(sys.argv[1]); f = s.makefile("rw")
+f.readline(); f.write(json.dumps({"execute": "qmp_capabilities"}) + "\n"); f.flush(); f.readline()
+f.write(json.dumps({"execute": "screendump", "arguments": {"filename": sys.argv[2]}}) + "\n"); f.flush(); f.readline()
+PY
+    fb="$(head -c 20 "$T/fb.ppm" 2>/dev/null | sed -n 2p)"
+    [ -n "$fb" ] && [ "$fb" != "640 480" ] && break
+done
+kill "$FB_PID" 2>/dev/null || true
+[ -n "$fb" ] && [ "$fb" != "640 480" ] && ok "firmware ramfb ekranını açtı ($fb)" || { echo "hata: firmware ramfb ekranını açmadı" >&2; exit 1; }
+
 "$H/qemu-img" create -q -f qcow2 "$T/disk.qcow2" 1G && "$H/qemu-img" info "$T/disk.qcow2" | grep -q qcow2 && ok "qemu-img"
 "$H/qemu-img" convert -f "$VARS_FORMAT" -O qcow2 "$S/qemu/edk2-arm-vars.fd" "$T/vars.qcow2" && ok "EFI değişken şablonu ($VARS_FORMAT)"
 

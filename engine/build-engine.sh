@@ -14,7 +14,7 @@ ROOT="$(pwd)"
 ENGINE="$ROOT/engine"
 
 UTM_TAG="v5.0.8"
-VERSION="${VERSION:-utm-5.0.8-2}"
+VERSION="${VERSION:-utm-5.0.8-3}"
 WORK="${WORK:-$ROOT/.engine-work}"
 OUT="${OUT:-$ROOT/build/engine}"
 NAME="oriel-engine-$VERSION-arm64"
@@ -27,6 +27,13 @@ WIMLIB_SHA="84221a3abd5b91228f15f8e6065c335a336237b5738197b75bf419eea561a194"
 XORRISO_VER="1.5.8.pl02"
 XORRISO_URL="https://www.gnu.org/software/xorriso/xorriso-$XORRISO_VER.tar.gz"
 XORRISO_SHA="b1455ecafbf0692ddafe1d71002a96f2ce2d77f4deae602678261ce033f97bc8"
+# EDK2: UTM'nin sysroot'undaki derleme her açılışta UTM logosu gösterir ve tek başına ramfb'yi başlatmaz (Windows
+# kurulumunda ekran gelmez). Yerine QEMU'nun resmi pc-bios derlemesi (Homebrew QEMU 11.1.2'dekiyle bayt bayt aynı).
+EDK2_QEMU_TAG="v11.1.2"
+EDK2_BASE="https://gitlab.com/qemu-project/qemu/-/raw/$EDK2_QEMU_TAG/pc-bios"
+EDK2_CODE_SHA="c023444108b7a132fdebf70c4765cd2dd9af2a9ff7d001a743aaabe87c20a458"   # edk2-aarch64-code.fd.bz2
+EDK2_VARS_SHA="0011d83b5e67c691a58e3ae25a2e7fdf1d245a73d1b2b8bccb24af1a8c2e2523"   # edk2-arm-vars.fd.bz2
+EDK2_LICENSES_SHA="1ddeaed2e7d2e9ecb960bdfc1b8ee45387aff70d056d985d145949af3951657c" # edk2-licenses.txt
 
 say() { printf '\033[0;32m==> %s\033[0m\n' "$*"; }
 die() { printf '\033[0;31mhata: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -139,8 +146,15 @@ python3 -I "$ENGINE/closure.py" --frameworks "$SYSROOT/Frameworks" --dest "$STAG
     --root "$STAGE/Helpers/virgl_render_server" --root "$STAGE/Helpers/swtpm" \
     --runtime dxmt-native.framework --runtime EGL.framework --runtime GLESv2.framework
 
-# Firmware: yalnız aarch64 virt + aygıt kümemizin kullandıkları (QEMU'ya -L <motor>/qemu verilir)
-for f in edk2-aarch64-code.fd edk2-arm-vars.fd edk2-licenses.txt efi-virtio.rom vgabios-ramfb.bin; do
+# Firmware: yalnız aarch64 virt + aygıt kümemizin kullandıkları (QEMU'ya -L <motor>/qemu verilir).
+# EDK2 QEMU'nun resmi pc-bios'undan (yukarıdaki not), seçenek ROM'ları ve tuş eşlemleri UTM sysroot'undan.
+fetch "$EDK2_BASE/edk2-aarch64-code.fd.bz2" "$EDK2_CODE_SHA" "$TOOLS/dl/edk2-aarch64-code-$EDK2_QEMU_TAG.fd.bz2"
+fetch "$EDK2_BASE/edk2-arm-vars.fd.bz2" "$EDK2_VARS_SHA" "$TOOLS/dl/edk2-arm-vars-$EDK2_QEMU_TAG.fd.bz2"
+fetch "$EDK2_BASE/edk2-licenses.txt" "$EDK2_LICENSES_SHA" "$TOOLS/dl/edk2-licenses-$EDK2_QEMU_TAG.txt"
+bunzip2 -c "$TOOLS/dl/edk2-aarch64-code-$EDK2_QEMU_TAG.fd.bz2" > "$STAGE/qemu/edk2-aarch64-code.fd"
+bunzip2 -c "$TOOLS/dl/edk2-arm-vars-$EDK2_QEMU_TAG.fd.bz2" > "$STAGE/qemu/edk2-arm-vars.fd"
+cp "$TOOLS/dl/edk2-licenses-$EDK2_QEMU_TAG.txt" "$STAGE/qemu/edk2-licenses.txt"
+for f in efi-virtio.rom vgabios-ramfb.bin; do
     cp -a "$SYSROOT/share/qemu/$f" "$STAGE/qemu/"
 done
 cp -a "$SYSROOT/share/qemu/keymaps" "$STAGE/qemu/keymaps"
@@ -157,6 +171,7 @@ python3 -I "$ENGINE/licenses.py" --table "$ENGINE/licenses.tsv" --search "$UTMBU
     echo "QEMU yapılandırması: --enable-cocoa --disable-sdl --target-list=aarch64-softmmu --enable-tools"
     echo "Atlanan adımlar: build_spice_client, build_vulkan_drivers"
     echo "Ek araçlar: wimlib $WIMLIB_VER ($WIMLIB_SHA), GNU xorriso $XORRISO_VER ($XORRISO_SHA)"
+    echo "EDK2: QEMU $EDK2_QEMU_TAG pc-bios (edk2-aarch64-code.fd.bz2 $EDK2_CODE_SHA)"
     echo "oriel-releases: $(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo yerel)"
     echo
     cat "$UTM/patches/sources"

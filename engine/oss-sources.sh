@@ -29,8 +29,9 @@ else
     tar -C "$B" --exclude .git --exclude 'build*' -czf "$D/upstream/dxmt.tar.gz" dxmt.git
 fi
 
-# wimlib ve GNU xorriso (GPL-3.0)
+# wimlib ve GNU xorriso (GPL-3.0); EDK2 ikilileri (BSD-2-Clause-Patent, QEMU pc-bios) kolaylık için
 cp "$TOOLS"/dl/wimlib-*.tar.gz "$TOOLS"/dl/xorriso-*.tar.gz "$D/upstream/"
+cp "$TOOLS"/dl/edk2-*.fd.bz2 "$TOOLS"/dl/edk2-licenses-*.txt "$D/upstream/" 2>/dev/null || true
 
 # Derleme betikleri: UTM'nin betik ve yamaları (sabit etiket) + bizim engine/ klasörümüz (yamalar dahil)
 utm_ref="$(git -C "$UTM" describe --tags --always 2>/dev/null || git -C "$UTM" rev-parse --short HEAD)"
