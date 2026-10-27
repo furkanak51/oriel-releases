@@ -67,6 +67,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Sürüm doğrulanmış bir önizleme yapıtından elle yayımlandıysa (gh release create) yeniden yayımlanmaz
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "$GITHUB_REF_NAME zaten yayımlanmış; atlandı"
+            exit 0
+          fi
           {
             echo "Oriel motoru ${GITHUB_REF_NAME#engine-} (Apple Silicon, macOS 12+; Oriel uygulaması macOS 26 ister)."
             echo

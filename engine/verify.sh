@@ -24,7 +24,7 @@ for f in "${machos[@]}"; do
             *) err "${f#$STAGE/}: sistem dışı bağımlılık $dep" ;;
         esac
     done < <(otool -L "$f" | tail -n +2 | sed -E 's/^[[:space:]]+//; s/ \(compatibility.*//')
-    if strings -a "$f" | grep -q -E "/Users/runner|/opt/homebrew|/usr/local/(lib|opt|Cellar)"; then
+    if strings -a "$f" | grep -E "/Users/runner|/opt/homebrew|/usr/local/(lib|opt|Cellar)" >/dev/null; then
         echo "uyarı: ${f#$STAGE/} içinde derleme makinesi yolu geçiyor (çalışmayı etkilemeyebilir)" >&2
     fi
 done
