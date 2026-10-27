@@ -1,0 +1,83 @@
+# Oriel motor paketini derler: engine/build-engine.sh
+# Elle tetiklenir (önizleme yapıtı) ya da "engine-*" etiketi itilince motoru ve copyleft kaynak arşivini yayımlar.
+name: engine
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["engine-*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # macOS 26 SDK şart: QEMU fork'u HVF 4 KB IPA ayarını (3D blob belleği) yalnızca bu SDK ile genel API'den yapar
+    runs-on: macos-26
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Araçlar
+        run: |
+          brew install meson ninja cmake bison gettext glib libgpg-error llvm spirv-llvm-translator libxcb libxrandr pkg-config nasm
+          python3 -m pip install six pyparsing setuptools pyyaml distlib mako
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix gettext)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix glib)/bin" >> "$GITHUB_PATH"
+
+      - name: Xcode ve Metal araçları
+        run: |
+          xcodebuild -version
+          xcrun --sdk macosx --show-sdk-version
+          xcodebuild -downloadComponent MetalToolchain || true
+          xcrun -sdk macosx metal --version
+
+      - name: Kaynak önbelleği
+        uses: actions/cache@v4
+        with:
+          path: |
+            .engine-work/UTM/build-macOS-arm64/*.tar.*
+            .engine-work/tools/dl
+          key: engine-src-utm-5.0.8-v2
+
+      - name: Derle
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/engine-* ]]; then export VERSION="${GITHUB_REF_NAME#engine-}"; fi
+          engine/build-engine.sh
+
+      - name: Duman testi
+        run: engine/smoke-test.sh build/engine/oriel-engine-*-arm64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oriel-engine
+          retention-days: 30
+          path: |
+            build/engine/*.tar.xz
+            build/engine/*.tar
+            build/engine/*.sha256
+
+      - name: Yayımla
+        if: startsWith(github.ref, 'refs/tags/engine-')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Oriel motoru ${GITHUB_REF_NAME#engine-} (Apple Silicon, macOS 12+; Oriel uygulaması macOS 26 ister)."
+            echo
+            echo "- \`oriel-engine-…-arm64.tar.xz\`: Oriel uygulamasının gömdüğü motor (QEMU 2D/3D, qemu-img, swtpm, wimlib-imagex, xorriso)"
+            echo "- \`oss-sources-….tar\`: GPL/LGPL bileşenlerin tam kaynak kodu ve derleme betikleri"
+            echo
+            echo '```'
+            cat build/engine/*.sha256
+            echo '```'
+            echo
+            sed -n '1,6p' build/engine/oriel-engine-*-arm64/SOURCES.txt
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" build/engine/*.tar.xz build/engine/*.tar build/engine/*.sha256 \
+            --title "Motor ${GITHUB_REF_NAME#engine-}" --notes-file notes.md --latest=false

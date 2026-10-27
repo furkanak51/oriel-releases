@@ -1,0 +1,28 @@
+# bileşen	SPDX	sağladığı çerçeveler/yardımcılar (virgülle; - yok)	kaynak klasör deseni (arama köklerinde; ** = derin)	lisans dosyası desenleri (boşlukla)
+qemu	GPL-2.0-only	qemu-system-aarch64,qemu-img	qemu-*	COPYING COPYING.LIB LICENSE
+edk2	BSD-2-Clause-Patent	-	.	edk2-licenses.txt
+glib	LGPL-2.1-or-later	glib-2.0.0,gio-2.0.0,gmodule-2.0.0,gobject-2.0.0	glib-2.*	LICENSES/LGPL-2.1-or-later.txt COPYING
+libintl	LGPL-2.1-or-later	intl.8	gettext-*	gettext-runtime/intl/COPYING* gettext-runtime/COPYING* COPYING
+libiconv	LGPL-2.1-or-later	iconv.2	libiconv-*	COPYING.LIB
+libffi	MIT	ffi.8	libffi-*	LICENSE
+pixman	MIT	pixman-1.0	pixman-*	COPYING
+libjpeg-turbo	IJG AND BSD-3-Clause AND Zlib	jpeg.62	libjpeg-turbo-*	LICENSE.md README.ijg
+openssl	OpenSSL AND SSLeay	ssl.1.1,crypto.1.1	openssl-*	LICENSE
+libtpms	BSD-3-Clause	-	libtpms-*	LICENSE
+swtpm	BSD-3-Clause	swtpm.0,swtpm	swtpm-*	LICENSE COPYING
+opus	BSD-3-Clause	opus.0	opus-*	COPYING
+zstd	BSD-3-Clause	zstd.1	zstd-*	LICENSE
+spice-server	LGPL-2.1-or-later	spice-server.1	spice-0.*	COPYING
+libusb	LGPL-2.1-or-later	usb-1.0.0	libusb-*	COPYING
+usbredir	LGPL-2.1-or-later	usbredirparser.1	usbredir-*	COPYING.LIB COPYING
+libslirp	BSD-3-Clause	slirp.0	libslirp-*	COPYRIGHT LICENSE
+gstreamer	LGPL-2.0-or-later	gstreamer-1.0.0,gstbase-1.0.0	gstreamer-1.*	COPYING
+gst-plugins-base	LGPL-2.0-or-later	gstapp-1.0.0	gst-plugins-base-*	COPYING
+virglrenderer	MIT	virglrenderer.1,virgl_render_server	virglrenderer*	COPYING
+libepoxy	MIT	epoxy.0	libepoxy*	COPYING
+vulkan-loader	Apache-2.0	vulkan.1	Vulkan-Loader*	LICENSE.txt
+angle	BSD-3-Clause	EGL,GLESv2	WebKit*	Source/ThirdParty/ANGLE/LICENSE
+dxmt	LGPL-2.1-or-later	dxmt-native	dxmt*	LICENSE COPYING.LIB
+llvm	Apache-2.0 WITH LLVM-exception	-	**/llvm-project-*	llvm/LICENSE.TXT
+wimlib	GPL-3.0-or-later AND LGPL-3.0-or-later	wimlib-imagex	wimlib-*	COPYING*
+xorriso	GPL-3.0-or-later	xorriso	xorriso-*	COPYING COPYRIGHT

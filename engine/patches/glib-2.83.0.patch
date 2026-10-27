@@ -1,0 +1,15 @@
+--- a/meson.build	2026-10-21 02:42:05
++++ b/meson.build	2026-10-21 02:42:05
+@@ -288,8 +288,10 @@
+ 
+ glib_conf.set('_GNU_SOURCE', 1)
+ 
+-if host_system in ['windows', 'darwin']
+-  # Poll doesn't work on devices on Windows, and macOS's poll() implementation is known to be broken
++if host_system == 'windows'
++  # Poll doesn't work on devices on Windows. Paralel Desktop: macOS'ta gercek poll() kullanilir; select()
++  # taklidi FD_SETSIZE (1024) ustundeki tanitici numaralarini kabul etmez ve 3D (Neptune) acikken QEMU
++  # ana dongusu 'poll(2) failed: Invalid argument' ile kilitlenir.
+   glib_conf.set('BROKEN_POLL', true)
+ endif
+ 
